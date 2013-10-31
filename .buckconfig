@@ -1,0 +1,11 @@
+[alias]
+  plugin = //:reviewers
+
+[buildfile]
+  includes = //lib/build.defs
+
+[java]
+  src_roots = java, resources
+
+[project]
+  ignore = .git
