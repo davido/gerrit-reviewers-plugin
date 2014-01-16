@@ -1,5 +1,5 @@
-API_VERSION = '2.9-SNAPSHOT'
-REPO = MAVEN_LOCAL
+API_VERSION = '2.8.1'
+REPO = GERRIT
 
 gerrit_plugin(
   name = 'reviewers',
