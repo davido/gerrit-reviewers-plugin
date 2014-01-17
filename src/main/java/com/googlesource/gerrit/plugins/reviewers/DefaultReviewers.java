@@ -14,14 +14,12 @@
 
 package com.googlesource.gerrit.plugins.reviewers;
 
-import com.google.gerrit.extensions.api.changes.AddReviewerInput;
+import com.google.gerrit.extensions.api.GerritApi;
+import com.google.gerrit.extensions.api.changes.ChangeApi;
+import com.google.gerrit.extensions.restapi.RestApiException;
 import com.google.gerrit.reviewdb.client.Account;
 import com.google.gerrit.reviewdb.client.Change;
-import com.google.gerrit.server.change.ChangeResource;
-import com.google.gerrit.server.change.ChangesCollection;
-import com.google.gerrit.server.change.PostReviewers;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.inject.assistedinject.Assisted;
 
 import org.slf4j.Logger;
@@ -33,10 +31,9 @@ public class DefaultReviewers implements Runnable {
   private static final Logger log = LoggerFactory
       .getLogger(DefaultReviewers.class);
 
+  private final GerritApi gApi;
   private final Change change;
   private final Set<Account> reviewers;
-  private final Provider<PostReviewers> reviewersProvider;
-  private final ChangesCollection changes;
 
   public interface Factory {
     DefaultReviewers create(Change change,
@@ -45,14 +42,12 @@ public class DefaultReviewers implements Runnable {
 
   @Inject
   public DefaultReviewers(
-      Provider<PostReviewers> reviewersProvider,
-      ChangesCollection changes,
+      GerritApi gApi,
       @Assisted Change change,
       @Assisted Set<Account> reviewers) {
+    this.gApi = gApi;
     this.change = change;
     this.reviewers = reviewers;
-    this.reviewersProvider = reviewersProvider;
-    this.changes = changes;
   }
 
   @Override
@@ -63,20 +58,17 @@ public class DefaultReviewers implements Runnable {
   /**
    * Append the reviewers to change#{@link Change}
    *
-   * @param topReviewers Set of reviewers proposed
+   * @param reviewers Set of reviewers to add
    * @param change {@link Change} to add the reviewers to
    */
   private void addReviewers(Set<Account> reviewers, Change change) {
     try {
-      ChangeResource rsrc = changes.parse(change.getId());
-      PostReviewers post = reviewersProvider.get();
+      ChangeApi cApi = gApi.changes().id(change.getId().get());
       for (Account account : reviewers) {
-        AddReviewerInput input = new AddReviewerInput();
-        input.reviewer = account.getId().toString();
-        post.apply(rsrc, input);
+        cApi.addReviewer(account.getId().toString());
       }
-    } catch (Exception ex) {
-      log.error("Couldn't add reviewers to the change", ex);
+    } catch (RestApiException e) {
+      log.error("Couldn't add reviewers to the change", e);
     }
   }
 }
