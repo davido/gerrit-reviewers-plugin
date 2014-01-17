@@ -2,7 +2,7 @@
   plugin = //:reviewers
 
 [buildfile]
-  includes = //lib/build.defs
+  includes = //tools/buck.defs
 
 [java]
   src_roots = java, resources

@@ -14,20 +14,20 @@
 
 package com.googlesource.gerrit.plugins.reviewers;
 
-import java.util.Set;
+import com.google.gerrit.extensions.api.changes.AddReviewerInput;
+import com.google.gerrit.reviewdb.client.Account;
+import com.google.gerrit.reviewdb.client.Change;
+import com.google.gerrit.server.change.ChangeResource;
+import com.google.gerrit.server.change.ChangesCollection;
+import com.google.gerrit.server.change.PostReviewers;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.assistedinject.Assisted;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gerrit.reviewdb.client.Account;
-import com.google.gerrit.reviewdb.client.Change;
-import com.google.gerrit.server.IdentifiedUser;
-import com.google.gerrit.server.change.ChangeResource;
-import com.google.gerrit.server.change.PostReviewers;
-import com.google.gerrit.server.project.ChangeControl;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.assistedinject.Assisted;
+import java.util.Set;
 
 public class DefaultReviewers implements Runnable {
   private static final Logger log = LoggerFactory
@@ -36,8 +36,7 @@ public class DefaultReviewers implements Runnable {
   private final Change change;
   private final Set<Account> reviewers;
   private final Provider<PostReviewers> reviewersProvider;
-  private final IdentifiedUser.GenericFactory identifiedUserFactory;
-  private final ChangeControl.GenericFactory changeControlFactory;
+  private final ChangesCollection changes;
 
   public interface Factory {
     DefaultReviewers create(Change change,
@@ -46,15 +45,14 @@ public class DefaultReviewers implements Runnable {
 
   @Inject
   public DefaultReviewers(
-      ChangeControl.GenericFactory changeControlFactory,
       Provider<PostReviewers> reviewersProvider,
-      IdentifiedUser.GenericFactory identifiedUserFactory,
-      @Assisted Change change, @Assisted Set<Account> reviewers) {
+      ChangesCollection changes,
+      @Assisted Change change,
+      @Assisted Set<Account> reviewers) {
     this.change = change;
     this.reviewers = reviewers;
     this.reviewersProvider = reviewersProvider;
-    this.identifiedUserFactory = identifiedUserFactory;
-    this.changeControlFactory = changeControlFactory;
+    this.changes = changes;
   }
 
   @Override
@@ -70,15 +68,12 @@ public class DefaultReviewers implements Runnable {
    */
   private void addReviewers(Set<Account> reviewers, Change change) {
     try {
-      ChangeControl changeControl =
-          changeControlFactory.controlFor(change,
-              identifiedUserFactory.create(change.getOwner()));
-      ChangeResource changeResource = new ChangeResource(changeControl);
+      ChangeResource rsrc = changes.parse(change.getId());
       PostReviewers post = reviewersProvider.get();
       for (Account account : reviewers) {
-        PostReviewers.Input input = new PostReviewers.Input();
+        AddReviewerInput input = new AddReviewerInput();
         input.reviewer = account.getId().toString();
-        post.apply(changeResource, input);
+        post.apply(rsrc, input);
       }
     } catch (Exception ex) {
       log.error("Couldn't add reviewers to the change", ex);

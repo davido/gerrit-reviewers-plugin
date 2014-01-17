@@ -1,9 +1,11 @@
 GERRIT = 'GERRIT:'
+GERRIT_API = 'GERRIT_API:'
 MAVEN_LOCAL = 'MAVEN_LOCAL:'
 
 def maven_jar(
     name,
     id,
+    license,
     deps = [],
     sha1 = '',
     bin_sha1 = '',
