@@ -1,4 +1,4 @@
-API_VERSION = '2.8.1'
+API_VERSION = '2.8.2'
 REPO = GERRIT
 
 gerrit_plugin(
