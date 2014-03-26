@@ -27,7 +27,7 @@ public class Module extends FactoryModule {
         ChangeEventListener.class);
     factory(DefaultReviewers.Factory.class);
     bind(ProjectConfigEntry.class)
-       .annotatedWith(Exports.named("reviewers"))
+       .annotatedWith(Exports.named("reviewer"))
        .toInstance(
            new ProjectConfigEntry("Reviewers", null,
                ProjectConfigEntry.Type.ARRAY, null, false,
