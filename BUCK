@@ -10,7 +10,11 @@ gerrit_plugin(
   manifest_entries = [
     'Gerrit-PluginName: reviewers',
     'Gerrit-Module: com.googlesource.gerrit.plugins.reviewers.Module',
-  ]
+  ],
+  provided_deps = [
+    '//gerrit-antlr:query_exception',
+    '//gerrit-antlr:query_parser',
+  ],
 )
 
 maven_jar(

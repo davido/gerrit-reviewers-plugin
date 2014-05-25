@@ -11,7 +11,12 @@ Other projects can then override the configuration in their own
 ```
   [filter "*"]
     reviewer = john.doe@example.com
+
+  [filter "branch:main file:^lib/*"]
     reviewer = jane.doe@example.com
+
+  [filter "branch:stable-2.10"]
+    reviewer = QAGroup
 
 ```
 

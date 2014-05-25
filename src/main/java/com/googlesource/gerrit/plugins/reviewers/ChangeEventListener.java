@@ -15,6 +15,7 @@
 package com.googlesource.gerrit.plugins.reviewers;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
@@ -23,6 +24,10 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.gerrit.common.ChangeListener;
@@ -43,6 +48,10 @@ import com.google.gerrit.server.events.PatchSetCreatedEvent;
 import com.google.gerrit.server.git.GitRepositoryManager;
 import com.google.gerrit.server.git.WorkQueue;
 import com.google.gerrit.server.group.GroupsCollection;
+import com.google.gerrit.server.query.Predicate;
+import com.google.gerrit.server.query.QueryParseException;
+import com.google.gerrit.server.query.change.ChangeData;
+import com.google.gerrit.server.query.change.ChangeQueryBuilder;
 import com.google.gerrit.server.util.RequestContext;
 import com.google.gerrit.server.util.ThreadLocalRequestContext;
 import com.google.gwtorm.server.OrmException;
@@ -65,7 +74,10 @@ class ChangeEventListener implements ChangeListener {
   private final IdentifiedUser.GenericFactory identifiedUserFactory;
   private final ThreadLocalRequestContext tl;
   private final SchemaFactory<ReviewDb> schemaFactory;
+  private final ChangeData.Factory changeDataFactory;
   private final ReviewersConfig.Factory configFactory;
+  private final Provider<CurrentUser> user;
+  private final ChangeQueryBuilder.Factory queryBuilder;
   private ReviewDb db;
 
   @Inject
@@ -80,8 +92,11 @@ class ChangeEventListener implements ChangeListener {
       final IdentifiedUser.GenericFactory identifiedUserFactory,
       final ThreadLocalRequestContext tl,
       final SchemaFactory<ReviewDb> schemaFactory,
+      final ChangeData.Factory changeDataFactory,
       final ReviewersConfig.Factory configFactory,
       final PluginConfigFactory cfg,
+      final Provider<CurrentUser> user,
+      final ChangeQueryBuilder.Factory queryBuilder,
       final @PluginName String pluginName) {
     this.accountResolver = accountResolver;
     this.byEmailCache = byEmailCache;
@@ -93,7 +108,10 @@ class ChangeEventListener implements ChangeListener {
     this.identifiedUserFactory = identifiedUserFactory;
     this.tl = tl;
     this.schemaFactory = schemaFactory;
+    this.changeDataFactory = changeDataFactory;
     this.configFactory = configFactory;
+    this.user = user;
+    this.queryBuilder = queryBuilder;
   }
 
   @Override
@@ -103,9 +121,11 @@ class ChangeEventListener implements ChangeListener {
     }
     PatchSetCreatedEvent e = (PatchSetCreatedEvent) event;
     Project.NameKey projectName = new Project.NameKey(e.change.project);
+    // TODO(davido): we have to cache per project configuration
     ReviewersConfig config = configFactory.create(projectName);
-    Set<String> reviewers = config.getReviewers();
-    if (reviewers.isEmpty()) {
+    List<ReviewerFilterSection> sections = config.getReviewerFilterSections();
+
+    if (sections.isEmpty()) {
       return;
     }
 
@@ -138,6 +158,11 @@ class ChangeEventListener implements ChangeListener {
         final Change change = reviewDb.changes().get(psId.getParentKey());
         if (change == null) {
           log.warn("Change " + changeId.get() + " not found.");
+          return;
+        }
+
+        Set<String> reviewers = findReviewers(sections, reviewDb, change);
+        if (reviewers.isEmpty()) {
           return;
         }
 
@@ -181,7 +206,7 @@ class ChangeEventListener implements ChangeListener {
             }
           }
         });
-      } catch (OrmException x) {
+      } catch (OrmException | QueryParseException x) {
         log.error(x.getMessage(), x);
       } finally {
         reviewDb.close();
@@ -192,6 +217,44 @@ class ChangeEventListener implements ChangeListener {
       rw.release();
       git.close();
     }
+  }
+
+  private Set<String> findReviewers(
+      List<ReviewerFilterSection> sections, final ReviewDb reviewDb,
+      final Change change) throws OrmException, QueryParseException {
+    ImmutableSet.Builder<String> reviewers = ImmutableSet.builder();
+    List<ReviewerFilterSection> found = findReviewerSections(sections, reviewDb, change);
+    for (ReviewerFilterSection s : found) {
+      reviewers.addAll(s.getReviewers());
+    }
+    return reviewers.build();
+  }
+
+  private List<ReviewerFilterSection> findReviewerSections(
+      List<ReviewerFilterSection> sections, final ReviewDb reviewDb,
+      final Change change) throws OrmException, QueryParseException {
+    ImmutableList.Builder<ReviewerFilterSection> found = ImmutableList.builder();
+    ChangeData changeData = changeDataFactory.create(reviewDb, change);
+    for (ReviewerFilterSection s : sections) {
+      if (Strings.isNullOrEmpty(s.getFilter())
+          || s.getFilter().equals("*")) {
+        found.add(s);
+      } else if (filterMatch(s.getFilter(), changeData)) {
+        found.add(s);
+      }
+    }
+    return found.build();
+  }
+
+  boolean filterMatch(String filter, ChangeData changeData)
+      throws OrmException, QueryParseException {
+    Preconditions.checkNotNull(filter);
+    ChangeQueryBuilder qb = queryBuilder.create(user.get());
+    Predicate<ChangeData> filterPredicate = qb.parse(filter);
+    // TODO(davido): check that the potential review can see this change
+    // by adding AND is_visible() predicate? Or is it OK to assume
+    // that reviewers always can see it?
+    return filterPredicate.match(changeData);
   }
 
   private Set<Account> toAccounts(Set<String> in, Project.NameKey p,

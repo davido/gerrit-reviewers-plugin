@@ -14,6 +14,7 @@
 
 package com.googlesource.gerrit.plugins.reviewers;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gerrit.extensions.annotations.PluginName;
 import com.google.gerrit.reviewdb.client.Project;
@@ -24,9 +25,10 @@ import com.google.inject.assistedinject.Assisted;
 
 import org.eclipse.jgit.lib.Config;
 
-import java.util.Set;
+import java.util.List;
 
 class ReviewersConfig {
+  private final static String FILTER = "filter";
   private final Config cfg;
 
   interface Factory {
@@ -42,11 +44,19 @@ class ReviewersConfig {
         pluginName);
   }
 
-  Set<String> getReviewers() {
-    ImmutableSet.Builder<String> b = ImmutableSet.builder();
-    for (String reviewer : cfg.getStringList("filter", "*", "reviewer")) {
-      b.add(reviewer);
+  List<ReviewerFilterSection> getReviewerFilterSections() {
+    ImmutableList.Builder<ReviewerFilterSection> b = ImmutableList.builder();
+    for (String f : cfg.getSubsections(FILTER)) {
+      b.add(newReviewerFilterSection(f));
     }
     return b.build();
+  }
+
+  private ReviewerFilterSection newReviewerFilterSection(String filter) {
+    ImmutableSet.Builder<String> b = ImmutableSet.builder();
+    for (String reviewer : cfg.getStringList(FILTER, filter, "reviewer")) {
+      b.add(reviewer);
+    }
+    return new ReviewerFilterSection(filter, b.build());
   }
 }
