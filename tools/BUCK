@@ -1,5 +1,0 @@
-python_binary(
-  name = 'download_file',
-  main = 'download_file.py',
-  visibility = ['PUBLIC'],
-)

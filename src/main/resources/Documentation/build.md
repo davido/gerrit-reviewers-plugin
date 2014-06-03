@@ -1,32 +1,38 @@
 Build
 =====
 
-This plugin can be built with Buck or Maven.
+This plugin is built with Buck.
 
-Buck
-----
-
-To build with Buck in standalone mode (outside of the Gerrit tree),
-run
+Clone or link this plugin to the plugins directory of Gerrit's source
+tree, and issue the command:
 
 ```
-  $>buck build plugin
+  buck build plugins/reviewers
 ```
 
-Maven
------
-
-To build with Maven, run
+The output is created in
 
 ```
-mvn clean package
+  buck-out/gen/plugins/reviewers/reviewers.jar
 ```
 
-Prerequisites
--------------
+This project can be imported into the Eclipse IDE:
 
-gerrit-plugin-api must be fetched from remote or local Maven repository.
+```
+  ./tools/eclipse/project.py
+```
 
-How to obtain the Gerrit Plugin API is described in the [Gerrit
+Note that for compatibility reasons a Maven build is provided, but is considered
+to be deprecated and will be removed in a future version of this plugin.
+
+To build with Maven, change directory to the plugin folder and issue the
+command:
+
+```
+  mvn clean package
+```
+
+When building with Maven, the Gerrit Plugin API must be available.
+
+How to build the Gerrit Plugin API is described in the [Gerrit
 documentation](../../../Documentation/dev-buck.html#_extension_and_plugin_api_jar_files).
-

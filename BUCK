@@ -1,6 +1,3 @@
-API_VERSION = '2.8.2'
-REPO = GERRIT
-
 gerrit_plugin(
   name = 'reviewers',
   srcs = glob(['src/main/java/**/*.java']),
@@ -9,10 +6,4 @@ gerrit_plugin(
     'Gerrit-PluginName: reviewers',
     'Gerrit-Module: com.googlesource.gerrit.plugins.reviewers.Module',
   ]
-)
-
-maven_jar(
-  name = 'plugin-lib',
-  id = 'com.google.gerrit:gerrit-plugin-api:' + API_VERSION,
-  repository = REPO,
 )
