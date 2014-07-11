@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Set;
 
-public class DefaultReviewers implements Runnable {
+class DefaultReviewers implements Runnable {
   private static final Logger log = LoggerFactory
       .getLogger(DefaultReviewers.class);
 
@@ -35,13 +35,12 @@ public class DefaultReviewers implements Runnable {
   private final Change change;
   private final Set<Account> reviewers;
 
-  public interface Factory {
-    DefaultReviewers create(Change change,
-        Set<Account> reviewers);
+  interface Factory {
+    DefaultReviewers create(Change change, Set<Account> reviewers);
   }
 
   @Inject
-  public DefaultReviewers(
+  DefaultReviewers(
       GerritApi gApi,
       @Assisted Change change,
       @Assisted Set<Account> reviewers) {

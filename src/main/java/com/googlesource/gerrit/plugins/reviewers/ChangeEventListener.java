@@ -15,7 +15,6 @@
 package com.googlesource.gerrit.plugins.reviewers;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.Set;
 
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
@@ -44,7 +43,6 @@ import com.google.gerrit.server.events.PatchSetCreatedEvent;
 import com.google.gerrit.server.git.GitRepositoryManager;
 import com.google.gerrit.server.git.WorkQueue;
 import com.google.gerrit.server.group.GroupsCollection;
-import com.google.gerrit.server.project.NoSuchProjectException;
 import com.google.gerrit.server.util.RequestContext;
 import com.google.gerrit.server.util.ThreadLocalRequestContext;
 import com.google.gwtorm.server.OrmException;
@@ -54,7 +52,6 @@ import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
 
 class ChangeEventListener implements ChangeListener {
-
   private static final Logger log = LoggerFactory
       .getLogger(ChangeEventListener.class);
 
@@ -68,8 +65,7 @@ class ChangeEventListener implements ChangeListener {
   private final IdentifiedUser.GenericFactory identifiedUserFactory;
   private final ThreadLocalRequestContext tl;
   private final SchemaFactory<ReviewDb> schemaFactory;
-  private final PluginConfigFactory cfg;
-  private final String pluginName;
+  private final ReviewersConfig.Factory configFactory;
   private ReviewDb db;
 
   @Inject
@@ -84,6 +80,7 @@ class ChangeEventListener implements ChangeListener {
       final IdentifiedUser.GenericFactory identifiedUserFactory,
       final ThreadLocalRequestContext tl,
       final SchemaFactory<ReviewDb> schemaFactory,
+      final ReviewersConfig.Factory configFactory,
       final PluginConfigFactory cfg,
       final @PluginName String pluginName) {
     this.accountResolver = accountResolver;
@@ -96,8 +93,7 @@ class ChangeEventListener implements ChangeListener {
     this.identifiedUserFactory = identifiedUserFactory;
     this.tl = tl;
     this.schemaFactory = schemaFactory;
-    this.cfg = cfg;
-    this.pluginName = pluginName;
+    this.configFactory = configFactory;
   }
 
   @Override
@@ -107,16 +103,8 @@ class ChangeEventListener implements ChangeListener {
     }
     PatchSetCreatedEvent e = (PatchSetCreatedEvent) event;
     Project.NameKey projectName = new Project.NameKey(e.change.project);
-    Set<Account> reviewers;
-    try {
-      reviewers = reviewers(cfg
-          .getFromProjectConfigWithInheritance(projectName, pluginName)
-          .getStringList("reviewer"), projectName, e.uploader.email);
-    } catch (NoSuchProjectException x) {
-      log.error(x.getMessage(), x);
-      return;
-    }
-
+    ReviewersConfig config = configFactory.create(projectName);
+    Set<String> reviewers = config.getReviewers();
     if (reviewers.isEmpty()) {
       return;
     }
@@ -153,7 +141,8 @@ class ChangeEventListener implements ChangeListener {
           return;
         }
 
-        final Runnable task = reviewersFactory.create(change, reviewers);
+        final Runnable task = reviewersFactory.create(change,
+            toAccounts(reviewers, projectName, e.uploader.email));
 
         workQueue.getDefaultQueue().submit(new Runnable() {
           public void run() {
@@ -205,14 +194,11 @@ class ChangeEventListener implements ChangeListener {
     }
   }
 
-  private Set<Account> reviewers(String[] list, Project.NameKey p,
+  private Set<Account> toAccounts(Set<String> in, Project.NameKey p,
       String uploaderEMail) {
-    if (list == null || list.length == 0) {
-      return Collections.emptySet();
-    }
-    Set<Account> reviewers = Sets.newHashSetWithExpectedSize(list.length);
+    Set<Account> reviewers = Sets.newHashSetWithExpectedSize(in.size());
     GroupMembers groupMembers = null;
-    for (String r : list) {
+    for (String r : in) {
       try {
         Account account = accountResolver.find(r);
         if (account != null) {

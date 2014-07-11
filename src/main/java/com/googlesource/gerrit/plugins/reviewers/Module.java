@@ -15,22 +15,15 @@
 package com.googlesource.gerrit.plugins.reviewers;
 
 import com.google.gerrit.common.ChangeListener;
-import com.google.gerrit.extensions.annotations.Exports;
 import com.google.gerrit.extensions.registration.DynamicSet;
 import com.google.gerrit.server.config.FactoryModule;
-import com.google.gerrit.server.config.ProjectConfigEntry;
 
-public class Module extends FactoryModule {
+class Module extends FactoryModule {
   @Override
   protected void configure() {
     DynamicSet.bind(binder(), ChangeListener.class).to(
         ChangeEventListener.class);
     factory(DefaultReviewers.Factory.class);
-    bind(ProjectConfigEntry.class)
-       .annotatedWith(Exports.named("reviewer"))
-       .toInstance(
-           new ProjectConfigEntry("Reviewers", null,
-               ProjectConfigEntry.Type.ARRAY, null, false,
-               "Users or groups can be provided as reviewers"));
+    factory(ReviewersConfig.Factory.class);
   }
 }
