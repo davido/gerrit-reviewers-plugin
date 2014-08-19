@@ -8,6 +8,11 @@ be done in the `reviewers.config` file of the `All-Projects` root project.
 Other projects can then override the configuration in their own
 `reviewers.config` file.
 
+WARNING: Due to a bug in Gerrit core in all released versions, the config
+file must be called `reviewers` and not `reviewers.config`.  That bug was
+fixed in upcoming 2.10 release (not released yet). Note that after upgrade,
+the file must be renamed to `reviewers.config`.
+
 ```
   [filter "*"]
     reviewer = john.doe@example.com
