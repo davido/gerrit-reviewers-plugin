@@ -42,7 +42,6 @@ import com.google.gerrit.server.IdentifiedUser;
 import com.google.gerrit.server.account.AccountByEmailCache;
 import com.google.gerrit.server.account.AccountResolver;
 import com.google.gerrit.server.account.GroupMembers;
-import com.google.gerrit.server.config.PluginConfigFactory;
 import com.google.gerrit.server.events.ChangeEvent;
 import com.google.gerrit.server.events.PatchSetCreatedEvent;
 import com.google.gerrit.server.git.GitRepositoryManager;
@@ -94,7 +93,6 @@ class ChangeEventListener implements ChangeListener {
       final SchemaFactory<ReviewDb> schemaFactory,
       final ChangeData.Factory changeDataFactory,
       final ReviewersConfig.Factory configFactory,
-      final PluginConfigFactory cfg,
       final Provider<CurrentUser> user,
       final ChangeQueryBuilder.Factory queryBuilder,
       final @PluginName String pluginName) {
