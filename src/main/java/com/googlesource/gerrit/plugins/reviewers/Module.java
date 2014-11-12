@@ -14,16 +14,29 @@
 
 package com.googlesource.gerrit.plugins.reviewers;
 
+import static com.google.gerrit.server.project.ProjectResource.PROJECT_KIND;
+
 import com.google.gerrit.common.ChangeListener;
 import com.google.gerrit.extensions.registration.DynamicSet;
+import com.google.gerrit.extensions.restapi.RestApiModule;
+import com.google.gerrit.extensions.webui.TopMenu;
 import com.google.gerrit.server.config.FactoryModule;
 
 class Module extends FactoryModule {
   @Override
   protected void configure() {
+    DynamicSet.bind(binder(), TopMenu.class).to(
+        ReviewersTopMenu.class);
     DynamicSet.bind(binder(), ChangeListener.class).to(
         ChangeEventListener.class);
     factory(DefaultReviewers.Factory.class);
     factory(ReviewersConfig.Factory.class);
+    install(new RestApiModule() {
+      @Override
+      protected void configure() {
+        get(PROJECT_KIND, "reviewers").to(GetReviewers.class);
+        put(PROJECT_KIND, "reviewers").to(PutReviewers.class);
+      }
+    });
   }
 }

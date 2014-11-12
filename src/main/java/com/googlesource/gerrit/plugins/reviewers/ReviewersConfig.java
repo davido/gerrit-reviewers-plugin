@@ -14,22 +14,32 @@
 
 package com.googlesource.gerrit.plugins.reviewers;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.gerrit.extensions.annotations.PluginName;
 import com.google.gerrit.reviewdb.client.Project;
+import com.google.gerrit.reviewdb.client.RefNames;
 import com.google.gerrit.server.config.PluginConfigFactory;
+import com.google.gerrit.server.git.VersionedMetaData;
 import com.google.gerrit.server.project.NoSuchProjectException;
 import com.google.inject.Inject;
 import com.google.inject.assistedinject.Assisted;
 
+import org.eclipse.jgit.errors.ConfigInvalidException;
+import org.eclipse.jgit.lib.CommitBuilder;
 import org.eclipse.jgit.lib.Config;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-class ReviewersConfig {
+class ReviewersConfig extends VersionedMetaData {
+  private final static String FILENAME = "reviewers.config";
   private final static String FILTER = "filter";
-  private final Config cfg;
+  private final static String REVIEWER = "reviewer";
+  private Config cfg;
 
   interface Factory {
     ReviewersConfig create(Project.NameKey projectName);
@@ -52,11 +62,53 @@ class ReviewersConfig {
     return b.build();
   }
 
+  void addReviewer(String filter, String reviewer) {
+    if (!newReviewerFilterSection(filter).getReviewers().contains(reviewer)) {
+      List<String> values = new ArrayList<>(Arrays.asList(cfg.getStringList(
+          FILTER, filter, REVIEWER)));
+      values.add(reviewer);
+      cfg.setStringList(FILTER, filter, REVIEWER, values);
+    }
+  }
+
+  void removeReviewer(String filter, String reviewer) {
+    if (newReviewerFilterSection(filter).getReviewers().contains(reviewer)) {
+      List<String> values = new ArrayList<>(Arrays.asList(cfg.getStringList(
+          FILTER, filter, REVIEWER)));
+      values.remove(reviewer);
+      if (values.isEmpty()) {
+        cfg.unsetSection(FILTER, filter);
+      } else {
+        cfg.setStringList(FILTER, filter, REVIEWER, values);
+      }
+    }
+  }
+
   private ReviewerFilterSection newReviewerFilterSection(String filter) {
     ImmutableSet.Builder<String> b = ImmutableSet.builder();
-    for (String reviewer : cfg.getStringList(FILTER, filter, "reviewer")) {
+    for (String reviewer : cfg.getStringList(FILTER, filter, REVIEWER)) {
       b.add(reviewer);
     }
     return new ReviewerFilterSection(filter, b.build());
+  }
+
+  @Override
+  protected String getRefName() {
+    return RefNames.REFS_CONFIG;
+  }
+
+  @Override
+  protected void onLoad() throws IOException, ConfigInvalidException {
+    cfg = readConfig(FILENAME);
+  }
+
+  @Override
+  protected boolean onSave(CommitBuilder commit) throws IOException,
+      ConfigInvalidException {
+    if (Strings.isNullOrEmpty(commit.getMessage())) {
+      commit.setMessage("Update reviewers configuration\n");
+    }
+    saveConfig(FILENAME, cfg);
+    return true;
   }
 }

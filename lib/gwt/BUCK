@@ -1,0 +1,43 @@
+include_defs('//bucklets/maven_jar.bucklet')
+
+VER = '2.6.1'
+
+maven_jar(
+  name = 'user',
+  id = 'com.google.gwt:gwt-user:' + VER,
+  sha1 = 'c078b1b8cc0281214b0eb458d2c283d039374fad',
+  license = 'Apache2.0',
+  attach_source = False,
+  deps = [
+    ':javax-validation',
+    ':javax-validation_src',
+  ]
+)
+
+maven_jar(
+  name = 'dev',
+  id = 'com.google.gwt:gwt-dev:' + VER,
+  sha1 = 'db237e4be0aa1fe43425d2c51ab5485dba211ddd',
+  license = 'Apache2.0',
+  attach_source = False,
+  exclude = ['org/eclipse/jetty/*'],
+  deps = [':json'],
+)
+
+maven_jar(
+  name = 'javax-validation',
+  id = 'javax.validation:validation-api:1.0.0.GA',
+  bin_sha1 = 'b6bd7f9d78f6fdaa3c37dae18a4bd298915f328e',
+  src_sha1 = '7a561191db2203550fbfa40d534d4997624cd369',
+  license = 'Apache2.0',
+  visibility = [],
+)
+
+maven_jar(
+  name = 'json',
+  id = 'org.json:json:20140107',
+  sha1 = 'd1ffca6e2482b002702c6a576166fd685e3370e3',
+  license = 'DO_NOT_DISTRIBUTE',
+  attach_source = False,
+  visibility = [],
+)

@@ -1,0 +1,28 @@
+.reviewers-panel {
+  border-spacing: 10px 10px;
+}
+
+.reviewers-addButton {
+  float: right;
+  margin-right: 5px;
+}
+
+.reviewers-inputPanel {
+  margin-left: 15px;
+}
+
+.reviewers-filterLabel {
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.reviewers-reviewerLabel {
+  font-size: 14px;
+  margin-left: 15px;
+}
+
+.reviewers-removeButton {
+  margin-left: 10px;
+  vertical-align: middle;
+  cursor: pointer;
+}
