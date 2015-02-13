@@ -16,7 +16,7 @@ package com.googlesource.gerrit.plugins.reviewers;
 
 import static com.google.gerrit.server.project.ProjectResource.PROJECT_KIND;
 
-import com.google.gerrit.common.ChangeListener;
+import com.google.gerrit.common.EventListener;
 import com.google.gerrit.extensions.registration.DynamicSet;
 import com.google.gerrit.extensions.restapi.RestApiModule;
 import com.google.gerrit.extensions.webui.TopMenu;
@@ -27,7 +27,7 @@ class Module extends FactoryModule {
   protected void configure() {
     DynamicSet.bind(binder(), TopMenu.class).to(
         ReviewersTopMenu.class);
-    DynamicSet.bind(binder(), ChangeListener.class).to(
+    DynamicSet.bind(binder(), EventListener.class).to(
         ChangeEventListener.class);
     factory(DefaultReviewers.Factory.class);
     factory(ReviewersConfig.Factory.class);
