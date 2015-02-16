@@ -205,7 +205,8 @@ public class ReviewersScreen extends HorizontalPanel {
         return false;
       }
       ReviewerEntry other = (ReviewerEntry) o;
-      if (this.filter != other.filter || this.reviewer != other.reviewer) {
+      if (!this.filter.equals(other.filter)
+          || !this.reviewer.equals(other.reviewer)) {
         return false;
       }
       return true;
