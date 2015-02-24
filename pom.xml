@@ -22,7 +22,7 @@ limitations under the License.
   <groupId>com.googlesource.gerrit.plugins.reviewers</groupId>
   <artifactId>reviewers</artifactId>
   <packaging>jar</packaging>
-  <version>2.9-SNAPSHOT</version>
+  <version>2.10</version>
   <name>reviewers</name>
 
   <properties>
