@@ -8,3 +8,5 @@
 /buck-out
 /local.properties
 *.pyc
+.buckversion
+.bucklets
