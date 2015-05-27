@@ -48,7 +48,6 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
 
-import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.slf4j.Logger;
@@ -125,21 +124,10 @@ class ChangeEventListener implements EventListener {
       return;
     }
 
-    Repository git;
-    try {
-      git = repoManager.openRepository(projectName);
-    } catch (RepositoryNotFoundException x) {
-      log.error(x.getMessage(), x);
-      return;
-    } catch (IOException x) {
-      log.error(x.getMessage(), x);
-      return;
-    }
+    try (Repository git = repoManager.openRepository(projectName);
+        RevWalk rw = new RevWalk(git)) {
+      final ReviewDb reviewDb;
 
-    final ReviewDb reviewDb;
-    final RevWalk rw = new RevWalk(git);
-
-    try {
       reviewDb = schemaFactory.open();
       try {
         Change.Id changeId = new Change.Id(Integer.parseInt(e.change.number));
@@ -208,11 +196,8 @@ class ChangeEventListener implements EventListener {
       } finally {
         reviewDb.close();
       }
-    } catch (OrmException x) {
+    } catch (OrmException | IOException x) {
       log.error(x.getMessage(), x);
-    } finally {
-      rw.release();
-      git.close();
     }
   }
 
