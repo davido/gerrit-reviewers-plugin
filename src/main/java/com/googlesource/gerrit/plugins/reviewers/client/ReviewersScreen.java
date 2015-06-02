@@ -21,6 +21,7 @@ import com.google.gerrit.plugin.client.screen.Screen;
 import com.google.gwt.core.client.JsArray;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HorizontalPanel;
@@ -41,7 +42,7 @@ public class ReviewersScreen extends HorizontalPanel {
     @Override
     public void onLoad(Screen screen) {
       screen.setPageTitle("Reviewers");
-      screen.show(new ReviewersScreen(screen.getToken()));
+      screen.show(new ReviewersScreen(URL.decodeQueryString(screen.getToken())));
     }
   }
 
