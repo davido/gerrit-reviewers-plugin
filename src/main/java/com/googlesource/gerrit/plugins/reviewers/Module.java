@@ -23,10 +23,23 @@ import com.google.gerrit.extensions.webui.TopMenu;
 import com.google.gerrit.server.config.FactoryModule;
 
 public class Module extends FactoryModule {
+  private final boolean ui;
+
+  public Module() {
+    this(true);
+  }
+
+  public Module(boolean ui) {
+    this.ui = ui;
+  }
+
   @Override
   protected void configure() {
-    DynamicSet.bind(binder(), TopMenu.class).to(
-        ReviewersTopMenu.class);
+    if (ui) {
+      DynamicSet.bind(binder(), TopMenu.class).to(
+          ReviewersTopMenu.class);
+    }
+
     DynamicSet.bind(binder(), EventListener.class).to(
         ChangeEventListener.class);
     factory(DefaultReviewers.Factory.class);
