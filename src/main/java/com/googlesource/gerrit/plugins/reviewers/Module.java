@@ -22,7 +22,7 @@ import com.google.gerrit.extensions.restapi.RestApiModule;
 import com.google.gerrit.extensions.webui.TopMenu;
 import com.google.gerrit.server.config.FactoryModule;
 
-class Module extends FactoryModule {
+public class Module extends FactoryModule {
   @Override
   protected void configure() {
     DynamicSet.bind(binder(), TopMenu.class).to(
