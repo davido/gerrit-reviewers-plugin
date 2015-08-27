@@ -17,10 +17,10 @@ package com.googlesource.gerrit.plugins.reviewers;
 import static com.google.gerrit.server.project.ProjectResource.PROJECT_KIND;
 
 import com.google.gerrit.common.EventListener;
+import com.google.gerrit.extensions.config.FactoryModule;
 import com.google.gerrit.extensions.registration.DynamicSet;
 import com.google.gerrit.extensions.restapi.RestApiModule;
 import com.google.gerrit.extensions.webui.TopMenu;
-import com.google.gerrit.server.config.FactoryModule;
 
 public class Module extends FactoryModule {
   private final boolean ui;
