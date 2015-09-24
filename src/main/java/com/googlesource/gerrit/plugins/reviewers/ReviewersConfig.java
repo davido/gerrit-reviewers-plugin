@@ -36,9 +36,9 @@ import java.util.Arrays;
 import java.util.List;
 
 class ReviewersConfig extends VersionedMetaData {
-  private final static String FILENAME = "reviewers.config";
-  private final static String FILTER = "filter";
-  private final static String REVIEWER = "reviewer";
+  private static final String FILENAME = "reviewers.config";
+  private static final String FILTER = "filter";
+  private static final String REVIEWER = "reviewer";
   private Config cfg;
 
   interface Factory {
