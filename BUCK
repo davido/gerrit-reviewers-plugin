@@ -16,6 +16,9 @@ gerrit_plugin(
 
 java_library(
   name = 'classpath',
-  deps = [':reviewers__plugin'],
+  deps = GERRIT_GWT_API + GERRIT_PLUGIN_API + [
+    ':reviewers__plugin',
+    '//lib/gwt:user',
+  ],
 )
 
