@@ -17,7 +17,7 @@ the file must be renamed to `reviewers.config`.
   [filter "*"]
     reviewer = john.doe@example.com
 
-  [filter "branch:main file:^lib/*"]
+  [filter "branch:main file:^lib/.*"]
     reviewer = jane.doe@example.com
 
   [filter "branch:stable-2.10"]
