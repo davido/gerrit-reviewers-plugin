@@ -159,7 +159,7 @@ class ChangeEventListener implements EventListener {
             RequestContext old = tl.setContext(new RequestContext() {
 
               @Override
-              public CurrentUser getCurrentUser() {
+              public CurrentUser getUser() {
                 return identifiedUserFactory.create(change.getOwner());
               }
 
