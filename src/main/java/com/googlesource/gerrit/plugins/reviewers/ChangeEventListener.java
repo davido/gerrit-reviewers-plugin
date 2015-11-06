@@ -125,78 +125,71 @@ class ChangeEventListener implements EventListener {
     }
 
     try (Repository git = repoManager.openRepository(projectName);
-        RevWalk rw = new RevWalk(git)) {
-      final ReviewDb reviewDb;
+        RevWalk rw = new RevWalk(git);
+        ReviewDb reviewDb = schemaFactory.open()) {
+      Change.Id changeId = new Change.Id(Integer.parseInt(e.change.number));
+      PatchSet.Id psId =
+          new PatchSet.Id(changeId, Integer.parseInt(e.patchSet.number));
+      PatchSet ps = reviewDb.patchSets().get(psId);
+      if (ps == null) {
+        log.warn("Patch set " + psId.get() + " not found.");
+        return;
+      }
 
-      reviewDb = schemaFactory.open();
-      try {
-        Change.Id changeId = new Change.Id(Integer.parseInt(e.change.number));
-        PatchSet.Id psId = new PatchSet.Id(changeId,
-            Integer.parseInt(e.patchSet.number));
-        PatchSet ps = reviewDb.patchSets().get(psId);
-        if (ps == null) {
-          log.warn("Patch set " + psId.get() + " not found.");
-          return;
-        }
+      final Change change = reviewDb.changes().get(psId.getParentKey());
+      if (change == null) {
+        log.warn("Change " + changeId.get() + " not found.");
+        return;
+      }
 
-        final Change change = reviewDb.changes().get(psId.getParentKey());
-        if (change == null) {
-          log.warn("Change " + changeId.get() + " not found.");
-          return;
-        }
+      Set<String> reviewers = findReviewers(sections, reviewDb, change);
+      if (reviewers.isEmpty()) {
+        return;
+      }
 
-        Set<String> reviewers = findReviewers(sections, reviewDb, change);
-        if (reviewers.isEmpty()) {
-          return;
-        }
+      final Runnable task =
+          reviewersFactory.create(change,
+              toAccounts(reviewers, projectName, e.uploader.email));
 
-        final Runnable task = reviewersFactory.create(change,
-            toAccounts(reviewers, projectName, e.uploader.email));
+      workQueue.getDefaultQueue().submit(new Runnable() {
+        @Override
+        public void run() {
+          RequestContext old = tl.setContext(new RequestContext() {
 
-        workQueue.getDefaultQueue().submit(new Runnable() {
-          @Override
-          public void run() {
-            RequestContext old = tl.setContext(new RequestContext() {
+            @Override
+            public CurrentUser getCurrentUser() {
+              return identifiedUserFactory.create(change.getOwner());
+            }
 
-              @Override
-              public CurrentUser getCurrentUser() {
-                return identifiedUserFactory.create(change.getOwner());
-              }
-
-              @Override
-              public Provider<ReviewDb> getReviewDbProvider() {
-                return new Provider<ReviewDb>() {
-                  @Override
-                  public ReviewDb get() {
-                    if (db == null) {
-                      try {
-                        db = schemaFactory.open();
-                      } catch (OrmException e) {
-                        throw new ProvisionException("Cannot open ReviewDb", e);
-                      }
+            @Override
+            public Provider<ReviewDb> getReviewDbProvider() {
+              return new Provider<ReviewDb>() {
+                @Override
+                public ReviewDb get() {
+                  if (db == null) {
+                    try {
+                      db = schemaFactory.open();
+                    } catch (OrmException e) {
+                      throw new ProvisionException("Cannot open ReviewDb", e);
                     }
-                    return db;
                   }
-                };
-              }
-            });
-            try {
-              task.run();
-            } finally {
-              tl.setContext(old);
-              if (db != null) {
-                db.close();
-                db = null;
-              }
+                  return db;
+                }
+              };
+            }
+          });
+          try {
+            task.run();
+          } finally {
+            tl.setContext(old);
+            if (db != null) {
+              db.close();
+              db = null;
             }
           }
-        });
-      } catch (OrmException | QueryParseException x) {
-        log.error(x.getMessage(), x);
-      } finally {
-        reviewDb.close();
-      }
-    } catch (OrmException | IOException x) {
+        }
+      });
+    } catch (OrmException | IOException | QueryParseException x) {
       log.error(x.getMessage(), x);
     }
   }
