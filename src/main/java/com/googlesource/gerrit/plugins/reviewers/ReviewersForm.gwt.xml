@@ -21,6 +21,7 @@
   <inherits name="com.google.gerrit.Plugin"/>
   <inherits name="com.google.gwt.http.HTTP"/>
   <inherits name="com.google.gwt.json.JSON"/>
+  <inherits name="com.google.gwtexpui.globalkey.GlobalKey"/>
   <!-- Using GWT built-in themes adds a number of static          -->
   <!-- resources to the plugin. No theme inherits lines were      -->
   <!-- added in order to make this plugin as simple as possible   -->

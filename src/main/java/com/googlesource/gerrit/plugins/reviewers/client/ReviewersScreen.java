@@ -28,8 +28,8 @@ import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.Panel;
-import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.google.gwtexpui.globalkey.client.NpTextBox;
 
 import java.util.HashSet;
 import java.util.Objects;
@@ -128,8 +128,8 @@ public class ReviewersScreen extends HorizontalPanel {
   }
 
   Panel createInputPanel(){
-    final TextBox filterBox = new TextBox();
-    final TextBox reviewerBox = new TextBox();
+    final NpTextBox filterBox = new NpTextBox();
+    final NpTextBox reviewerBox = new NpTextBox();
     filterBox.getElement().setPropertyString("placeholder", "filter");
     reviewerBox.getElement().setPropertyString("placeholder", "reviewer");
 
