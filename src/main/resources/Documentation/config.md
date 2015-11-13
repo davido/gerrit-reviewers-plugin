@@ -23,3 +23,21 @@ Other projects can then override the configuration in their own
 filter.<filter>.reviewer
 :	An account (email or full user name) or a group name. Multiple
 	`reviewer` occurrences are allowed.
+
+##Multiple filter matches
+
+The plugin supports multiple filter matches.
+
+###Example
+
+```
+  [filter "file:^build/modules/.*"]
+    reviewer = john.doe@example.com
+
+  [filter "file:^build/.*"]
+    reviewer = jane.doe@example.com
+
+```
+
+1. Push a change for review involving file "build/modules/GLOBAL.pm".
+2. Both john.doe@example.com and jane.doe@example.com get added as reviewers.
