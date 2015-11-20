@@ -44,7 +44,8 @@ public class ReviewersScreen extends HorizontalPanel {
     @Override
     public void onLoad(Screen screen) {
       screen.setPageTitle("Reviewers");
-      screen.show(new ReviewersScreen(URL.decodeQueryString(screen.getToken())));
+      screen.show(
+          new ReviewersScreen(URL.decodeQueryString(screen.getToken(1))));
     }
   }
 

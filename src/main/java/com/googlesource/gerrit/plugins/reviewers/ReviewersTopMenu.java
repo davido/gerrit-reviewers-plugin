@@ -29,7 +29,8 @@ public class ReviewersTopMenu implements TopMenu {
   ReviewersTopMenu(@PluginName String pluginName) {
     menuEntries = Lists.newArrayList();
     menuEntries.add(new MenuEntry("Projects", Collections.singletonList(
-        new MenuItem("Reviewers", "#/x/" + pluginName + "/${projectName}", "_self"))));
+        new MenuItem(
+            "Reviewers", "#/x/" + pluginName + "/p/${projectName}", "_self"))));
   }
 
   @Override

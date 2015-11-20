@@ -20,6 +20,6 @@ import com.google.gerrit.plugin.client.PluginEntryPoint;
 public class ReviewersPlugin extends PluginEntryPoint {
   @Override
   public void onPluginLoad() {
-    Plugin.get().screenRegex(".*", new ReviewersScreen.Factory());
+    Plugin.get().screenRegex("p/(.*)", new ReviewersScreen.Factory());
   }
 }

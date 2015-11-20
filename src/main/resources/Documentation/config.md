@@ -8,11 +8,6 @@ be done in the `reviewers.config` file of the `All-Projects` root project.
 Other projects can then override the configuration in their own
 `reviewers.config` file.
 
-WARNING: Due to a bug in Gerrit core in all released versions, the config
-file must be called `reviewers` and not `reviewers.config`.  That bug was
-fixed in upcoming 2.10 release (not released yet). Note that after upgrade,
-the file must be renamed to `reviewers.config`.
-
 ```
   [filter "*"]
     reviewer = john.doe@example.com
@@ -28,3 +23,21 @@ the file must be renamed to `reviewers.config`.
 filter.<filter>.reviewer
 :  An account (email or full user name) or a group name (only internal groups
 are supported). Multiple `reviewer` occurrences are allowed.
+
+##Multiple filter matches
+
+The plugin supports multiple filter matches.
+
+###Example
+
+```
+  [filter "file:^build/modules/.*"]
+    reviewer = john.doe@example.com
+
+  [filter "file:^build/.*"]
+    reviewer = jane.doe@example.com
+
+```
+
+1. Push a change for review involving file "build/modules/GLOBAL.pm".
+2. Both john.doe@example.com and jane.doe@example.com get added as reviewers.
