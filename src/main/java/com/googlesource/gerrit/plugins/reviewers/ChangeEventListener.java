@@ -31,6 +31,8 @@ import com.google.gerrit.server.IdentifiedUser;
 import com.google.gerrit.server.account.AccountByEmailCache;
 import com.google.gerrit.server.account.AccountResolver;
 import com.google.gerrit.server.account.GroupMembers;
+import com.google.gerrit.server.data.ChangeAttribute;
+import com.google.gerrit.server.data.PatchSetAttribute;
 import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.events.PatchSetCreatedEvent;
 import com.google.gerrit.server.git.GitRepositoryManager;
@@ -115,7 +117,9 @@ class ChangeEventListener implements EventListener {
       return;
     }
     PatchSetCreatedEvent e = (PatchSetCreatedEvent) event;
-    Project.NameKey projectName = new Project.NameKey(e.change.project);
+    ChangeAttribute c = e.change.get();
+    PatchSetAttribute p = e.patchSet.get();
+    Project.NameKey projectName = new Project.NameKey(c.project);
     // TODO(davido): we have to cache per project configuration
     ReviewersConfig config = configFactory.create(projectName);
     List<ReviewerFilterSection> sections = config.getReviewerFilterSections();
@@ -127,9 +131,9 @@ class ChangeEventListener implements EventListener {
     try (Repository git = repoManager.openRepository(projectName);
         RevWalk rw = new RevWalk(git);
         ReviewDb reviewDb = schemaFactory.open()) {
-      Change.Id changeId = new Change.Id(Integer.parseInt(e.change.number));
+      Change.Id changeId = new Change.Id(Integer.parseInt(c.number));
       PatchSet.Id psId =
-          new PatchSet.Id(changeId, Integer.parseInt(e.patchSet.number));
+          new PatchSet.Id(changeId, Integer.parseInt(p.number));
       PatchSet ps = reviewDb.patchSets().get(psId);
       if (ps == null) {
         log.warn("Patch set " + psId.get() + " not found.");
@@ -149,7 +153,7 @@ class ChangeEventListener implements EventListener {
 
       final Runnable task =
           reviewersFactory.create(change,
-              toAccounts(reviewers, projectName, e.uploader.email));
+              toAccounts(reviewers, projectName, e.uploader.get().email));
 
       workQueue.getDefaultQueue().submit(new Runnable() {
         @Override
