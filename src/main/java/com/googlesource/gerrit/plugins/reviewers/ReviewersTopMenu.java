@@ -16,6 +16,7 @@ package com.googlesource.gerrit.plugins.reviewers;
 
 import com.google.common.collect.Lists;
 import com.google.gerrit.extensions.annotations.PluginName;
+import com.google.gerrit.extensions.client.MenuItem;
 import com.google.gerrit.extensions.webui.TopMenu;
 import com.google.inject.Inject;
 
