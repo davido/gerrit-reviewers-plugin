@@ -49,6 +49,7 @@ import com.google.gwtorm.server.SchemaFactory;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.ProvisionException;
+import com.google.inject.Singleton;
 
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -59,6 +60,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
+@Singleton
 class ChangeEventListener implements EventListener {
   private static final Logger log = LoggerFactory
       .getLogger(ChangeEventListener.class);
@@ -77,7 +79,6 @@ class ChangeEventListener implements EventListener {
   private final ReviewersConfig.Factory configFactory;
   private final Provider<CurrentUser> user;
   private final ChangeQueryBuilder queryBuilder;
-  private ReviewDb db;
 
   @Inject
   ChangeEventListener(
@@ -156,6 +157,8 @@ class ChangeEventListener implements EventListener {
               toAccounts(reviewers, projectName, e.uploader.get().email));
 
       workQueue.getDefaultQueue().submit(new Runnable() {
+        ReviewDb db = null;
+
         @Override
         public void run() {
           RequestContext old = tl.setContext(new RequestContext() {
