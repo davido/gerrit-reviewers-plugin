@@ -1,12 +1,12 @@
 include_defs('//bucklets/maven_jar.bucklet')
 
-VER = '2.11.6'
+VER = '2.11.7'
 REPO = MAVEN_CENTRAL
 
 maven_jar(
   name = 'plugin-api',
   id = 'com.google.gerrit:gerrit-plugin-api:' + VER,
-  sha1 = '60b8de2ad7b6dfd80cf48c4f15b38aa8b97327d0',
+  sha1 = 'e49e930c5c4ce74fc2c4c1cde1ddfb3ff77d0d63',
   license = 'Apache2.0',
   attach_source = False,
   repository = REPO,
@@ -15,7 +15,7 @@ maven_jar(
 maven_jar(
   name = 'gwtui-api',
   id = 'com.google.gerrit:gerrit-plugin-gwtui:' + VER,
-  sha1 = 'b8f3c7455b895c7bb129441003a1ee585fad264b',
+  sha1 = '1dc70f829c0b5310141dd9bd12e1bafcda48724f',
   license = 'Apache2.0',
   attach_source = False,
   repository = REPO,
