@@ -89,13 +89,24 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
       throw new ResourceNotFoundException(projectName.get(), e);
     }
     try {
+      StringBuilder message = new StringBuilder(pluginName)
+          .append(" plugin: ");
       cfg.load(md);
       if (input.action == Action.ADD) {
+        message.append("Add reviewer ")
+          .append(input.reviewer)
+          .append(" to filter ")
+          .append(input.filter);
         cfg.addReviewer(input.filter, input.reviewer);
       } else {
+        message.append("Remove reviewer ")
+          .append(input.reviewer)
+          .append(" from filter ")
+          .append(input.filter);
         cfg.removeReviewer(input.filter, input.reviewer);
       }
-      md.setMessage("Modify reviewers.config\n");
+      message.append("\n");
+      md.setMessage(message.toString());
       try {
         ObjectId baseRev = cfg.getRevision();
         ObjectId commitRev = cfg.commit(md);
