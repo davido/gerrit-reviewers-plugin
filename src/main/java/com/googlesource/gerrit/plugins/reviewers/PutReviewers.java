@@ -17,10 +17,9 @@ package com.googlesource.gerrit.plugins.reviewers;
 import com.google.common.base.Objects;
 import com.google.gerrit.common.ChangeHooks;
 import com.google.gerrit.extensions.annotations.PluginName;
-import com.google.gerrit.extensions.restapi.AuthException;
-import com.google.gerrit.extensions.restapi.BadRequestException;
 import com.google.gerrit.extensions.restapi.ResourceConflictException;
 import com.google.gerrit.extensions.restapi.ResourceNotFoundException;
+import com.google.gerrit.extensions.restapi.RestApiException;
 import com.google.gerrit.extensions.restapi.RestModifyView;
 import com.google.gerrit.reviewdb.client.Branch;
 import com.google.gerrit.reviewdb.client.Project;
@@ -75,8 +74,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
 
   @Override
   public List<ReviewerFilterSection> apply(ProjectResource rsrc, Input input)
-      throws AuthException, BadRequestException, ResourceConflictException,
-      Exception {
+      throws RestApiException {
     Project.NameKey projectName = rsrc.getNameKey();
     ReviewersConfig cfg = configFactory.create(projectName);
     if (!rsrc.getControl().isOwner() || cfg == null) {
