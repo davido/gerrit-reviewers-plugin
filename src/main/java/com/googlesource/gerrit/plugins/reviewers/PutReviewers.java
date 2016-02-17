@@ -52,7 +52,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
 
   private final String pluginName;
   private final ReviewersConfig.Factory configFactory;
-  private final MetaDataUpdate.User metaDataUpdateFactory;
+  private final Provider<MetaDataUpdate.User> metaDataUpdateFactory;
   private final ProjectCache projectCache;
   private final Provider<CurrentUser> currentUser;
   private final ChangeHooks hooks;
@@ -60,7 +60,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
   @Inject
   PutReviewers(@PluginName String pluginName,
       ReviewersConfig.Factory configFactory,
-      MetaDataUpdate.User metaDataUpdateFactory,
+      Provider<MetaDataUpdate.User> metaDataUpdateFactory,
       ProjectCache projectCache,
       ChangeHooks hooks,
       Provider<CurrentUser> currentUser) {
@@ -82,7 +82,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
     }
     MetaDataUpdate md;
     try {
-      md = metaDataUpdateFactory.create(projectName);
+      md = metaDataUpdateFactory.get().create(projectName);
     } catch (RepositoryNotFoundException notFound) {
       throw new ResourceNotFoundException(projectName.get());
     } catch (IOException e) {
