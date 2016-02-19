@@ -49,6 +49,7 @@ public class Module extends FactoryModule {
       protected void configure() {
         get(PROJECT_KIND, "reviewers").to(GetReviewers.class);
         put(PROJECT_KIND, "reviewers").to(PutReviewers.class);
+        get(PROJECT_KIND, "suggest_reviewers").to(SuggestProjectReviewers.class);
       }
     });
   }
