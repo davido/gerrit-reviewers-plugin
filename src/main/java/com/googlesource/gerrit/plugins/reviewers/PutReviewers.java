@@ -17,10 +17,9 @@ package com.googlesource.gerrit.plugins.reviewers;
 import com.google.common.base.Objects;
 import com.google.gerrit.common.ChangeHooks;
 import com.google.gerrit.extensions.annotations.PluginName;
-import com.google.gerrit.extensions.restapi.AuthException;
-import com.google.gerrit.extensions.restapi.BadRequestException;
 import com.google.gerrit.extensions.restapi.ResourceConflictException;
 import com.google.gerrit.extensions.restapi.ResourceNotFoundException;
+import com.google.gerrit.extensions.restapi.RestApiException;
 import com.google.gerrit.extensions.restapi.RestModifyView;
 import com.google.gerrit.reviewdb.client.Branch;
 import com.google.gerrit.reviewdb.client.Project;
@@ -53,7 +52,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
 
   private final String pluginName;
   private final ReviewersConfig.Factory configFactory;
-  private final MetaDataUpdate.User metaDataUpdateFactory;
+  private final Provider<MetaDataUpdate.User> metaDataUpdateFactory;
   private final ProjectCache projectCache;
   private final Provider<CurrentUser> currentUser;
   private final ChangeHooks hooks;
@@ -61,7 +60,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
   @Inject
   PutReviewers(@PluginName String pluginName,
       ReviewersConfig.Factory configFactory,
-      MetaDataUpdate.User metaDataUpdateFactory,
+      Provider<MetaDataUpdate.User> metaDataUpdateFactory,
       ProjectCache projectCache,
       ChangeHooks hooks,
       Provider<CurrentUser> currentUser) {
@@ -75,8 +74,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
 
   @Override
   public List<ReviewerFilterSection> apply(ProjectResource rsrc, Input input)
-      throws AuthException, BadRequestException, ResourceConflictException,
-      Exception {
+      throws RestApiException {
     Project.NameKey projectName = rsrc.getNameKey();
     ReviewersConfig cfg = configFactory.create(projectName);
     if (!rsrc.getControl().isOwner() || cfg == null) {
@@ -84,20 +82,31 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
     }
     MetaDataUpdate md;
     try {
-      md = metaDataUpdateFactory.create(projectName);
+      md = metaDataUpdateFactory.get().create(projectName);
     } catch (RepositoryNotFoundException notFound) {
       throw new ResourceNotFoundException(projectName.get());
     } catch (IOException e) {
       throw new ResourceNotFoundException(projectName.get(), e);
     }
     try {
+      StringBuilder message = new StringBuilder(pluginName)
+          .append(" plugin: ");
       cfg.load(md);
       if (input.action == Action.ADD) {
+        message.append("Add reviewer ")
+          .append(input.reviewer)
+          .append(" to filter ")
+          .append(input.filter);
         cfg.addReviewer(input.filter, input.reviewer);
       } else {
+        message.append("Remove reviewer ")
+          .append(input.reviewer)
+          .append(" from filter ")
+          .append(input.filter);
         cfg.removeReviewer(input.filter, input.reviewer);
       }
-      md.setMessage("Modify reviewers.config\n");
+      message.append("\n");
+      md.setMessage(message.toString());
       try {
         ObjectId baseRev = cfg.getRevision();
         ObjectId commitRev = cfg.commit(md);

@@ -25,6 +25,7 @@ import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.rpc.AsyncCallback;
 import com.google.gwt.user.client.ui.Button;
+import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Label;
@@ -131,12 +132,19 @@ public class ReviewersScreen extends HorizontalPanel {
   }
 
   Panel createInputPanel(){
+    Grid inputGrid = new Grid(2, 2);
+
     final NpTextBox filterBox = new NpTextBox();
+    filterBox.getElement().setPropertyString("placeholder", "filter");
+    inputGrid.setText(0, 0, "Filter: ");
+    inputGrid.setWidget(0, 1, filterBox);
+
     // TODO(davido): Remove hard coded start suggest char 3
     final GroupSuggestOracle oracle = new GroupSuggestOracle(3);
     final SuggestBox reviewerBox = new SuggestBox(oracle, new NpTextBox());
-    filterBox.getElement().setPropertyString("placeholder", "filter");
     reviewerBox.getElement().setPropertyString("placeholder", "reviewer");
+    inputGrid.setText(1, 0, "Reviewer: ");
+    inputGrid.setWidget(1, 1, reviewerBox);
 
     Button addButton = new Button("Add");
     addButton.setStyleName("reviewers-addButton");
@@ -159,8 +167,7 @@ public class ReviewersScreen extends HorizontalPanel {
 
     Panel p = new VerticalPanel();
     p.setStyleName("reviewers-inputPanel");
-    p.add(filterBox);
-    p.add(reviewerBox);
+    p.add(inputGrid);
     p.add(addButton);
     return p;
   }
