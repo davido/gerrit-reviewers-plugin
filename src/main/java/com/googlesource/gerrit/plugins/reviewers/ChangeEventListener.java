@@ -271,7 +271,7 @@ class ChangeEventListener implements EventListener {
                   .getOnlyElement(byEmailCache.get(uploaderEMail))));
         }
         reviewers.addAll(groupMembers.listAccounts(groupsCollection.get()
-            .parseInternal(r).getGroupUUID(), p));
+            .parse(r).getGroupUUID(), p));
       } catch (Exception e) {
         log.warn("Cannot resolve reviewer: " + r, e);
       }
