@@ -78,15 +78,18 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
     Project.NameKey projectName = rsrc.getNameKey();
     ReviewersConfig cfg = configFactory.create(projectName);
     if (!rsrc.getControl().isOwner() || cfg == null) {
-      throw new ResourceNotFoundException(projectName.get());
+      throw new ResourceNotFoundException(
+          "Project" + projectName.get() + " not found");
     }
     MetaDataUpdate md;
     try {
       md = metaDataUpdateFactory.get().create(projectName);
     } catch (RepositoryNotFoundException notFound) {
-      throw new ResourceNotFoundException(projectName.get());
+      throw new ResourceNotFoundException(
+          "Project" + projectName.get() + " not found");
     } catch (IOException e) {
-      throw new ResourceNotFoundException(projectName.get(), e);
+      throw new ResourceNotFoundException(
+          "Project" + projectName.get() + " not found", e);
     }
     try {
       StringBuilder message = new StringBuilder(pluginName)
