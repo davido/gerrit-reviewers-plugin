@@ -21,8 +21,9 @@ Other projects can then override the configuration in their own
 ```
 
 filter.<filter>.reviewer
-:	An account (email or full user name) or a group name. Multiple
-	`reviewer` occurrences are allowed.
+:	An account or a group name. Must be an exact match (case sensitive) with the
+	account's email address or username, or the group name.  Multiple `reviewer`
+	occurrences are allowed.
 
 ##Multiple filter matches
 
