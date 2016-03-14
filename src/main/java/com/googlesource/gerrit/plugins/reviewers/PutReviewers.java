@@ -107,7 +107,9 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
       throw new ResourceNotFoundException(
           "Project" + projectName.get() + " not found", e);
     }
-    validateReviewer(input.reviewer);
+    if (input.action == Action.ADD) {
+      validateReviewer(input.reviewer);
+    }
     try {
       StringBuilder message = new StringBuilder(pluginName)
           .append(" plugin: ");
