@@ -21,6 +21,8 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
 import com.google.gerrit.common.EventListener;
+import com.google.gerrit.common.errors.NoSuchGroupException;
+import com.google.gerrit.extensions.restapi.UnprocessableEntityException;
 import com.google.gerrit.reviewdb.client.Account;
 import com.google.gerrit.reviewdb.client.Change;
 import com.google.gerrit.reviewdb.client.PatchSet;
@@ -36,6 +38,7 @@ import com.google.gerrit.server.events.PatchSetCreatedEvent;
 import com.google.gerrit.server.git.GitRepositoryManager;
 import com.google.gerrit.server.git.WorkQueue;
 import com.google.gerrit.server.group.GroupsCollection;
+import com.google.gerrit.server.project.NoSuchProjectException;
 import com.google.gerrit.server.query.Predicate;
 import com.google.gerrit.server.query.QueryParseException;
 import com.google.gerrit.server.query.change.ChangeData;
@@ -243,15 +246,28 @@ class ChangeEventListener implements EventListener {
           reviewers.add(account);
           continue;
         }
-        if (groupMembers == null) {
-          groupMembers =
-              groupMembersFactory.create(identifiedUserFactory.create(Iterables
-                  .getOnlyElement(byEmailCache.get(uploaderEMail))));
-        }
-        reviewers.addAll(groupMembers.listAccounts(groupsCollection.get()
-            .parseInternal(r).getGroupUUID(), p));
-      } catch (Exception e) {
-        log.warn("Cannot resolve reviewer: " + r, e);
+      } catch (OrmException e) {
+        // If the account doesn't exist, find() will return null.  We only
+        // get here if something went wrong accessing the database
+        log.error("Failed to resolve account " + r, e);
+        continue;
+      }
+      if (groupMembers == null) {
+        groupMembers =
+            groupMembersFactory.create(identifiedUserFactory.create(Iterables
+                .getOnlyElement(byEmailCache.get(uploaderEMail))));
+      }
+      try {
+        reviewers.addAll(groupMembers.listAccounts(
+            groupsCollection.get().parse(r).getGroupUUID(), p));
+      } catch (UnprocessableEntityException | NoSuchGroupException e) {
+        log.warn(String.format(
+            "Reviewer %s is neither an account nor a group", r));
+      } catch (NoSuchProjectException e) {
+        log.warn(String.format(
+            "Failed to list accounts for group %s and project %s", r, p));
+      } catch (IOException | OrmException e) {
+        log.warn(String.format("Failed to list accounts for group %s", r), e);
       }
     }
     return reviewers;
