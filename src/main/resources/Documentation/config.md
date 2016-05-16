@@ -1,8 +1,26 @@
 Configuration
 =============
 
-The configuration of the @PLUGIN@ plugin is done on project level in
-the `reviewers.config` file of the project. Missing values are inherited
+Global configuration of the @PLUGIN@ plugin is done in the
+`reviewers.config` file in the site's `etc` directory.
+
+```
+  [reviewers]
+    enableREST = true
+    enableUI = false
+```
+
+reviewers.enableREST
+:	Enable the REST API. When set to false, the REST API is not available.
+	Defaults to true.
+
+reviewers.enableUI
+:	Enable the UI.  When set to false, the 'Reviewers' menu is not displayed
+	on the project screen. Defaults to true, or false when `enableREST` is false.
+
+
+Per project configuration of the @PLUGIN@ plugin is done in the
+`reviewers.config` file of the project. Missing values are inherited
 from the parent projects. This means a global default configuration can
 be done in the `reviewers.config` file of the `All-Projects` root project.
 Other projects can then override the configuration in their own
