@@ -28,7 +28,7 @@ public class ChangeReviewersInput extends JavaScriptObject {
     setActionRaw(a.name());
   }
 
-  private final native void setActionRaw(String a)
+  final native void setActionRaw(String a)
   /*-{ if(a)this.action=a; }-*/;
 
   final native void setFilter(String f)
