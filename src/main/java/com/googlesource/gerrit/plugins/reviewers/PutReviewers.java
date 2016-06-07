@@ -82,48 +82,45 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
     if (!rsrc.getControl().isOwner() || cfg == null) {
       throw new ResourceNotFoundException(projectName.get());
     }
-    MetaDataUpdate md;
-    try {
-      md = metaDataUpdateFactory.create(projectName);
-    } catch (RepositoryNotFoundException notFound) {
-      throw new ResourceNotFoundException(projectName.get());
-    } catch (IOException e) {
-      throw new ResourceNotFoundException(projectName.get(), e);
-    }
-    try {
-      cfg.load(md);
-      if (input.action == Action.ADD) {
-        cfg.addReviewer(input.filter, input.reviewer);
-      } else {
-        cfg.removeReviewer(input.filter, input.reviewer);
-      }
-      md.setMessage("Modify reviewers.config\n");
+
+    try (MetaDataUpdate md = metaDataUpdateFactory.create(projectName)) {
       try {
-        ObjectId baseRev = cfg.getRevision();
-        ObjectId commitRev = cfg.commit(md);
-        // Only fire hook if project was actually changed.
-        if (!Objects.equal(baseRev, commitRev)) {
-          IdentifiedUser user = (IdentifiedUser) currentUser.get();
-          hooks.doRefUpdatedHook(
-            new Branch.NameKey(projectName, RefNames.REFS_CONFIG),
-            baseRev, commitRev, user.getAccount());
+        cfg.load(md);
+        if (input.action == Action.ADD) {
+          cfg.addReviewer(input.filter, input.reviewer);
+        } else {
+          cfg.removeReviewer(input.filter, input.reviewer);
         }
-        projectCache.evict(projectName);
-      } catch (IOException e) {
-        if (e.getCause() instanceof ConfigInvalidException) {
-          throw new ResourceConflictException("Cannot update " + projectName
-              + ": " + e.getCause().getMessage());
+        md.setMessage("Modify reviewers.config\n");
+        try {
+          ObjectId baseRev = cfg.getRevision();
+          ObjectId commitRev = cfg.commit(md);
+          // Only fire hook if project was actually changed.
+          if (!Objects.equal(baseRev, commitRev)) {
+            IdentifiedUser user = (IdentifiedUser) currentUser.get();
+            hooks.doRefUpdatedHook(
+              new Branch.NameKey(projectName, RefNames.REFS_CONFIG),
+              baseRev, commitRev, user.getAccount());
+          }
+          projectCache.evict(projectName);
+        } catch (IOException e) {
+          if (e.getCause() instanceof ConfigInvalidException) {
+            throw new ResourceConflictException("Cannot update " + projectName
+                + ": " + e.getCause().getMessage());
+          }
+          throw new ResourceConflictException("Cannot update " + projectName);
         }
-        throw new ResourceConflictException("Cannot update " + projectName);
+      } catch (ConfigInvalidException err) {
+        throw new ResourceConflictException("Cannot read " + pluginName
+            + " configurations for project " + projectName, err);
+      } catch (IOException err) {
+        throw new ResourceConflictException("Cannot update " + pluginName
+            + " configurations for project " + projectName, err);
       }
-    } catch (ConfigInvalidException err) {
-      throw new ResourceConflictException("Cannot read " + pluginName
-          + " configurations for project " + projectName, err);
+    } catch (RepositoryNotFoundException err) {
+      throw new ResourceNotFoundException(projectName.get());
     } catch (IOException err) {
-      throw new ResourceConflictException("Cannot update " + pluginName
-          + " configurations for project " + projectName, err);
-    } finally {
-      md.close();
+      throw new ResourceNotFoundException(projectName.get(), err);
     }
     return cfg.getReviewerFilterSections();
   }
