@@ -113,9 +113,8 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
         if (e.getCause() instanceof ConfigInvalidException) {
           throw new ResourceConflictException("Cannot update " + projectName
               + ": " + e.getCause().getMessage());
-        } else {
-          throw new ResourceConflictException("Cannot update " + projectName);
         }
+        throw new ResourceConflictException("Cannot update " + projectName);
       }
     } catch (ConfigInvalidException err) {
       throw new ResourceConflictException("Cannot read " + pluginName
