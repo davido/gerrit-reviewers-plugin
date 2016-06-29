@@ -239,7 +239,7 @@ class ChangeEventListener implements EventListener {
     // TODO(davido): check that the potential review can see this change
     // by adding AND is_visible() predicate? Or is it OK to assume
     // that reviewers always can see it?
-    return filterPredicate.match(changeData);
+    return filterPredicate.asMatchable().match(changeData);
   }
 
   private Set<Account> toAccounts(Set<String> in, Project.NameKey p,
