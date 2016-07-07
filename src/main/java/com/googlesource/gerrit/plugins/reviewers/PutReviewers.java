@@ -15,7 +15,6 @@
 package com.googlesource.gerrit.plugins.reviewers;
 
 import com.google.common.base.Objects;
-import com.google.gerrit.common.ChangeHooks;
 import com.google.gerrit.extensions.annotations.PluginName;
 import com.google.gerrit.extensions.restapi.ResourceConflictException;
 import com.google.gerrit.extensions.restapi.ResourceNotFoundException;
@@ -23,12 +22,12 @@ import com.google.gerrit.extensions.restapi.RestApiException;
 import com.google.gerrit.extensions.restapi.RestModifyView;
 import com.google.gerrit.extensions.restapi.UnprocessableEntityException;
 import com.google.gerrit.reviewdb.client.Account;
-import com.google.gerrit.reviewdb.client.Branch;
 import com.google.gerrit.reviewdb.client.Project;
 import com.google.gerrit.reviewdb.client.RefNames;
 import com.google.gerrit.server.CurrentUser;
 import com.google.gerrit.server.IdentifiedUser;
 import com.google.gerrit.server.account.AccountResolver;
+import com.google.gerrit.server.extensions.events.GitReferenceUpdated;
 import com.google.gerrit.server.git.MetaDataUpdate;
 import com.google.gerrit.server.group.GroupsCollection;
 import com.google.gerrit.server.project.ProjectCache;
@@ -65,7 +64,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
   private final Provider<MetaDataUpdate.User> metaDataUpdateFactory;
   private final ProjectCache projectCache;
   private final Provider<CurrentUser> currentUser;
-  private final ChangeHooks hooks;
+  private final GitReferenceUpdated gitRefUpdated;
   private final AccountResolver accountResolver;
   private final Provider<GroupsCollection> groupsCollection;
 
@@ -74,7 +73,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
       ReviewersConfig.Factory configFactory,
       Provider<MetaDataUpdate.User> metaDataUpdateFactory,
       ProjectCache projectCache,
-      ChangeHooks hooks,
+      GitReferenceUpdated gitRefUpdated,
       Provider<CurrentUser> currentUser,
       AccountResolver accountResolver,
       Provider<GroupsCollection> groupsCollection) {
@@ -82,7 +81,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
     this.configFactory = configFactory;
     this.metaDataUpdateFactory = metaDataUpdateFactory;
     this.projectCache = projectCache;
-    this.hooks = hooks;
+    this.gitRefUpdated = gitRefUpdated;
     this.currentUser = currentUser;
     this.accountResolver = accountResolver;
     this.groupsCollection = groupsCollection;
@@ -127,9 +126,8 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
           // Only fire hook if project was actually changed.
           if (!Objects.equal(baseRev, commitRev)) {
             IdentifiedUser user = (IdentifiedUser) currentUser.get();
-            hooks.doRefUpdatedHook(
-              new Branch.NameKey(projectName, RefNames.REFS_CONFIG),
-              baseRev, commitRev, user.getAccount());
+            gitRefUpdated.fire(projectName, RefNames.REFS_CONFIG, baseRev,
+                commitRev, user.getAccount());
           }
           projectCache.evict(projectName);
         } catch (IOException e) {
