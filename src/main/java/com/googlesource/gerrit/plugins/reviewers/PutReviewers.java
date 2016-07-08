@@ -14,7 +14,6 @@
 
 package com.googlesource.gerrit.plugins.reviewers;
 
-import com.google.common.base.Objects;
 import com.google.gerrit.extensions.annotations.PluginName;
 import com.google.gerrit.extensions.restapi.ResourceConflictException;
 import com.google.gerrit.extensions.restapi.ResourceNotFoundException;
@@ -23,11 +22,7 @@ import com.google.gerrit.extensions.restapi.RestModifyView;
 import com.google.gerrit.extensions.restapi.UnprocessableEntityException;
 import com.google.gerrit.reviewdb.client.Account;
 import com.google.gerrit.reviewdb.client.Project;
-import com.google.gerrit.reviewdb.client.RefNames;
-import com.google.gerrit.server.CurrentUser;
-import com.google.gerrit.server.IdentifiedUser;
 import com.google.gerrit.server.account.AccountResolver;
-import com.google.gerrit.server.extensions.events.GitReferenceUpdated;
 import com.google.gerrit.server.git.MetaDataUpdate;
 import com.google.gerrit.server.group.GroupsCollection;
 import com.google.gerrit.server.project.ProjectCache;
@@ -41,7 +36,6 @@ import com.googlesource.gerrit.plugins.reviewers.PutReviewers.Input;
 
 import org.eclipse.jgit.errors.ConfigInvalidException;
 import org.eclipse.jgit.errors.RepositoryNotFoundException;
-import org.eclipse.jgit.lib.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,8 +57,6 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
   private final ReviewersConfig.Factory configFactory;
   private final Provider<MetaDataUpdate.User> metaDataUpdateFactory;
   private final ProjectCache projectCache;
-  private final Provider<CurrentUser> currentUser;
-  private final GitReferenceUpdated gitRefUpdated;
   private final AccountResolver accountResolver;
   private final Provider<GroupsCollection> groupsCollection;
 
@@ -73,16 +65,12 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
       ReviewersConfig.Factory configFactory,
       Provider<MetaDataUpdate.User> metaDataUpdateFactory,
       ProjectCache projectCache,
-      GitReferenceUpdated gitRefUpdated,
-      Provider<CurrentUser> currentUser,
       AccountResolver accountResolver,
       Provider<GroupsCollection> groupsCollection) {
     this.pluginName = pluginName;
     this.configFactory = configFactory;
     this.metaDataUpdateFactory = metaDataUpdateFactory;
     this.projectCache = projectCache;
-    this.gitRefUpdated = gitRefUpdated;
-    this.currentUser = currentUser;
     this.accountResolver = accountResolver;
     this.groupsCollection = groupsCollection;
   }
@@ -121,14 +109,7 @@ class PutReviewers implements RestModifyView<ProjectResource, Input> {
         message.append("\n");
         md.setMessage(message.toString());
         try {
-          ObjectId baseRev = cfg.getRevision();
-          ObjectId commitRev = cfg.commit(md);
-          // Only fire hook if project was actually changed.
-          if (!Objects.equal(baseRev, commitRev)) {
-            IdentifiedUser user = (IdentifiedUser) currentUser.get();
-            gitRefUpdated.fire(projectName, RefNames.REFS_CONFIG, baseRev,
-                commitRev, user.getAccount());
-          }
+          cfg.commit(md);
           projectCache.evict(projectName);
         } catch (IOException e) {
           if (e.getCause() instanceof ConfigInvalidException) {
