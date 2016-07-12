@@ -25,7 +25,6 @@ import com.google.gerrit.common.errors.NoSuchGroupException;
 import com.google.gerrit.extensions.restapi.UnprocessableEntityException;
 import com.google.gerrit.reviewdb.client.Account;
 import com.google.gerrit.reviewdb.client.Change;
-import com.google.gerrit.reviewdb.client.PatchSet;
 import com.google.gerrit.reviewdb.client.Project;
 import com.google.gerrit.reviewdb.server.ReviewDb;
 import com.google.gerrit.server.CurrentUser;
@@ -34,7 +33,6 @@ import com.google.gerrit.server.account.AccountByEmailCache;
 import com.google.gerrit.server.account.AccountResolver;
 import com.google.gerrit.server.account.GroupMembers;
 import com.google.gerrit.server.data.ChangeAttribute;
-import com.google.gerrit.server.data.PatchSetAttribute;
 import com.google.gerrit.server.events.Event;
 import com.google.gerrit.server.events.PatchSetCreatedEvent;
 import com.google.gerrit.server.git.GitRepositoryManager;
@@ -122,7 +120,6 @@ class ChangeEventListener implements EventListener {
     }
     PatchSetCreatedEvent e = (PatchSetCreatedEvent) event;
     ChangeAttribute c = e.change.get();
-    PatchSetAttribute p = e.patchSet.get();
     Project.NameKey projectName = new Project.NameKey(c.project);
     // TODO(davido): we have to cache per project configuration
     ReviewersConfig config = configFactory.create(projectName);
@@ -135,26 +132,14 @@ class ChangeEventListener implements EventListener {
     try (Repository git = repoManager.openRepository(projectName);
         RevWalk rw = new RevWalk(git);
         ReviewDb reviewDb = schemaFactory.open()) {
-      Change.Id changeId = new Change.Id(Integer.parseInt(c.number));
-      PatchSet.Id psId =
-          new PatchSet.Id(changeId, Integer.parseInt(p.number));
-      PatchSet ps = reviewDb.patchSets().get(psId);
-      if (ps == null) {
-        log.warn("Patch set " + psId.get() + " not found.");
-        return;
-      }
-
-      final Change change = reviewDb.changes().get(psId.getParentKey());
-      if (change == null) {
-        log.warn("Change " + changeId.get() + " not found.");
-        return;
-      }
-
-      Set<String> reviewers = findReviewers(sections, reviewDb, change);
+      ChangeData changeData = changeDataFactory.create(
+          reviewDb, projectName, new Change.Id(Integer.parseInt(c.number)));
+      Set<String> reviewers = findReviewers(sections, changeData);
       if (reviewers.isEmpty()) {
         return;
       }
 
+      final Change change = changeData.change();
       final Runnable task =
           reviewersFactory.create(change,
               toAccounts(reviewers, projectName, e.uploader.get().email));
@@ -204,11 +189,11 @@ class ChangeEventListener implements EventListener {
     }
   }
 
-  private Set<String> findReviewers(
-      List<ReviewerFilterSection> sections, final ReviewDb reviewDb,
-      final Change change) throws OrmException, QueryParseException {
+  private Set<String> findReviewers(List<ReviewerFilterSection> sections,
+      ChangeData changeData) throws OrmException, QueryParseException {
     ImmutableSet.Builder<String> reviewers = ImmutableSet.builder();
-    List<ReviewerFilterSection> found = findReviewerSections(sections, reviewDb, change);
+    List<ReviewerFilterSection> found = findReviewerSections(sections,
+        changeData);
     for (ReviewerFilterSection s : found) {
       reviewers.addAll(s.getReviewers());
     }
@@ -216,10 +201,9 @@ class ChangeEventListener implements EventListener {
   }
 
   private List<ReviewerFilterSection> findReviewerSections(
-      List<ReviewerFilterSection> sections, final ReviewDb reviewDb,
-      final Change change) throws OrmException, QueryParseException {
+      List<ReviewerFilterSection> sections, ChangeData changeData)
+          throws OrmException, QueryParseException {
     ImmutableList.Builder<ReviewerFilterSection> found = ImmutableList.builder();
-    ChangeData changeData = changeDataFactory.create(reviewDb, change);
     for (ReviewerFilterSection s : sections) {
       if (Strings.isNullOrEmpty(s.getFilter())
           || s.getFilter().equals("*")) {
