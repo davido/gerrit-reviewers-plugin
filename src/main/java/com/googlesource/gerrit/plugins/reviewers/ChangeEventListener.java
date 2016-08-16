@@ -140,9 +140,9 @@ class ChangeEventListener implements EventListener {
       }
 
       final Change change = changeData.change();
-      final Runnable task =
-          reviewersFactory.create(change,
-              toAccounts(reviewers, projectName, e.uploader.get().email));
+      final Runnable task = reviewersFactory.create(change,
+          toAccounts(reviewDb, reviewers, projectName,
+              e.uploader.get().email));
 
       workQueue.getDefaultQueue().submit(new Runnable() {
         ReviewDb db = null;
@@ -226,13 +226,13 @@ class ChangeEventListener implements EventListener {
     return filterPredicate.asMatchable().match(changeData);
   }
 
-  private Set<Account> toAccounts(Set<String> in, Project.NameKey p,
-      String uploaderEMail) {
+  private Set<Account> toAccounts(ReviewDb reviewDb, Set<String> in,
+      Project.NameKey p, String uploaderEMail) {
     Set<Account> reviewers = Sets.newHashSetWithExpectedSize(in.size());
     GroupMembers groupMembers = null;
     for (String r : in) {
       try {
-        Account account = accountResolver.find(r);
+        Account account = accountResolver.find(reviewDb, r);
         if (account != null) {
           reviewers.add(account);
           continue;
