@@ -1,7 +1,7 @@
 A plugin that allows adding default reviewers to a change.
 
 The configuration for adding reviewers to submitted changes can be
-[configured per project](config.html).
+[configured per project](config.md).
 
 SEE ALSO
 --------
