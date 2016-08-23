@@ -31,6 +31,12 @@ Add link to the .buckversion file:
   cd reviewers && ln -s bucklets/buckversion .buckversion
 ```
 
+Add link to the .watchmanconfig file:
+
+```
+  cd reviewers && ln -s bucklets/watchmanconfig .watchmanconfig
+```
+
 To build the plugin, issue the following command:
 
 
