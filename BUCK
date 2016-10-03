@@ -10,7 +10,6 @@ gerrit_plugin(
   manifest_entries = [
     'Gerrit-PluginName: reviewers',
     'Gerrit-Module: com.googlesource.gerrit.plugins.reviewers.Module',
-    'Gerrit-HttpModule: com.googlesource.gerrit.plugins.reviewers.HttpModule',
   ]
 )
 
