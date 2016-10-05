@@ -43,6 +43,11 @@ public class Module extends FactoryModule {
         : false;
   }
 
+  public Module(boolean enableUI, boolean enableREST) {
+    this.enableUI = enableUI;
+    this.enableREST = enableREST;
+  }
+
   @Override
   protected void configure() {
     if (enableUI) {
@@ -51,10 +56,12 @@ public class Module extends FactoryModule {
       DynamicSet.bind(binder(), WebUiPlugin.class)
         .toInstance(new GwtPlugin("reviewers"));
     }
-    DynamicSet.bind(binder(), EventListener.class).to(
-        ChangeEventListener.class);
+
+    DynamicSet.bind(binder(), EventListener.class)
+        .to(ChangeEventListener.class);
     factory(DefaultReviewers.Factory.class);
     factory(ReviewersConfig.Factory.class);
+
     if (enableREST) {
       install(new RestApiModule() {
         @Override
