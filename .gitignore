@@ -10,3 +10,8 @@
 *.pyc
 .buckversion
 /bucklets
+/bazel-bin
+/bazel-genfiles
+/bazel-out
+/bazel-reviewers
+/bazel-testlogs
